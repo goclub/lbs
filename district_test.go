@@ -45,6 +45,18 @@ func TestDistrict_DistrictInfo(t *testing.T) {
 			DistrictADCode: "",
 		})
 	}
+	{
+		info, has, err := d.DistrictInfo("440311") ; assert.NoError(t, err)
+		assert.Equal(t,has, true)
+		assert.Equal(t, info, lbs.DistrictInfo{
+			ProvinceFullName:"广东省",
+			ProvinceADCode: "440000",
+			CityFullName: "深圳市",
+			CityADCode: "440300",
+			DistrictFullName: "光明区",
+			DistrictADCode: "440311",
+		})
+	}
 }
 
 func TestCheckDistricts(t *testing.T) {

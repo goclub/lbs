@@ -22,7 +22,7 @@ func NewDistrict(data AreaData) (d District, err error) {
 	}
 	for _, province := range provinces {
 		start := province.ChildrenIndex[0]
-		end := province.ChildrenIndex[1]
+		end := province.ChildrenIndex[1]+1
 		subCitys := citys[start:end]
 		for _, city := range subCitys {
 			if len(city.ChildrenIndex) == 0 {
@@ -39,7 +39,7 @@ func NewDistrict(data AreaData) (d District, err error) {
 				continue
 			}
 			start := city.ChildrenIndex[0]
-			end := city.ChildrenIndex[1]
+			end := city.ChildrenIndex[1]+1
 			subDistricts := districts[start:end]
 			for _, district := range subDistricts {
 				districtInfos = append(districtInfos, DistrictInfo{
