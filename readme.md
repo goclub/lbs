@@ -9,6 +9,7 @@ package main
 import lbs "github.com/goclub/lbs"
 
 func main () {
+	// NewDistrict 有性能消耗,不要每次都调用
 	d, err  := lbs.NewDistrict(lbs.DistrictDersion20211103) ; if err != nil {
 		return
 	}
