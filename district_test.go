@@ -6,12 +6,13 @@ import (
 	"testing"
 )
 
-func TestDistrict_DistrictInfo(t *testing.T) {
+func TestDistrict_Relationship(t *testing.T) {
 	d, err  := lbs.NewDistrict(lbs.DistrictDersion20211103) ; assert.NoError(t, err)
 	{
-		info, has, err := d.DistrictInfo("310101") ; assert.NoError(t, err)
+		info, has, err := d.Relationship("310101") ; assert.NoError(t, err)
 		assert.Equal(t,has, true)
-		assert.Equal(t, info, lbs.DistrictInfo{
+		assert.Equal(t, info, lbs.Relationship{
+			Level: lbs.LevelDistrict,
 			ProvinceFullName:"上海市",
 			ProvinceADCode: "310000",
 			CityFullName: "上海市",
@@ -21,9 +22,10 @@ func TestDistrict_DistrictInfo(t *testing.T) {
 		})
 	}
 	{
-		info, has, err := d.DistrictInfo("340123") ; assert.NoError(t, err)
+		info, has, err := d.Relationship("340123") ; assert.NoError(t, err)
 		assert.Equal(t,has, true)
-		assert.Equal(t, info, lbs.DistrictInfo{
+		assert.Equal(t, info, lbs.Relationship{
+			Level: lbs.LevelDistrict,
 			ProvinceFullName:"安徽省",
 			ProvinceADCode: "340000",
 			CityFullName: "合肥市",
@@ -34,9 +36,9 @@ func TestDistrict_DistrictInfo(t *testing.T) {
 	}
 	{
 		// 340100 合肥市
-		info, has, err := d.DistrictInfo("340100") ; assert.NoError(t, err)
+		info, has, err := d.Relationship("340100") ; assert.NoError(t, err)
 		assert.Equal(t,has, false)
-		assert.Equal(t, info, lbs.DistrictInfo{
+		assert.Equal(t, info, lbs.Relationship{
 			ProvinceFullName:"",
 			ProvinceADCode: "",
 			CityFullName: "",
@@ -46,9 +48,10 @@ func TestDistrict_DistrictInfo(t *testing.T) {
 		})
 	}
 	{
-		info, has, err := d.DistrictInfo("440311") ; assert.NoError(t, err)
+		info, has, err := d.Relationship("440311") ; assert.NoError(t, err)
 		assert.Equal(t,has, true)
-		assert.Equal(t, info, lbs.DistrictInfo{
+		assert.Equal(t, info, lbs.Relationship{
+			Level: lbs.LevelDistrict,
 			ProvinceFullName:"广东省",
 			ProvinceADCode: "440000",
 			CityFullName: "深圳市",
@@ -57,11 +60,39 @@ func TestDistrict_DistrictInfo(t *testing.T) {
 			DistrictADCode: "440311",
 		})
 	}
+	{
+		info, has, err := d.Relationship("441900") ; assert.NoError(t, err)
+		assert.Equal(t,has, true)
+		assert.Equal(t, info, lbs.Relationship{
+			Level: lbs.LevelDistrict,
+			IsWithoutDistrictCity: true,
+			ProvinceFullName:"广东省",
+			ProvinceADCode: "440000",
+			CityFullName: "东莞市",
+			CityADCode: "441900",
+			DistrictFullName: "东莞市",
+			DistrictADCode: "441999",
+		})
+	}
+	{
+		info, has, err := d.Relationship("441999") ; assert.NoError(t, err)
+		assert.Equal(t,has, true)
+		assert.Equal(t, info, lbs.Relationship{
+			Level: lbs.LevelDistrict,
+			IsWithoutDistrictCity: true,
+			ProvinceFullName:"广东省",
+			ProvinceADCode: "440000",
+			CityFullName: "东莞市",
+			CityADCode: "441900",
+			DistrictFullName: "东莞市",
+			DistrictADCode: "441999",
+		})
+	}
 }
 
 func TestCheckDistricts(t *testing.T) {
 	d, err  := lbs.NewDistrict(lbs.DistrictDersion20211103) ; assert.NoError(t, err)
-	for _, item := range d.Districts {
+	for _, item := range d.RelationshipList {
 		provincePart := item.DistrictADCode[0:2]
 		cityPart := item.DistrictADCode[2:4]
 		districtPart := item.DistrictADCode[4:6]
@@ -71,6 +102,51 @@ func TestCheckDistricts(t *testing.T) {
 			assert.Equal(t,item.CityADCode, provincePart + cityPart + "00", item.DistrictADCode)
 			continue
 		}
+		if item.IsWithoutDistrictCity {
+			assert.Equal(t, item.DistrictADCode[4:6], "99")
+		}
 		assert.NotEqualf(t, t, districtPart, "0000")
 	}
+	assert.Equal(t, d.WithoutDistrictCity, map[string]lbs.Relationship{
+		"441900": lbs.Relationship{
+			Level:                 lbs.LevelDistrict,
+			IsWithoutDistrictCity: true,
+			ProvinceFullName:"广东省",
+			ProvinceADCode: "440000",
+			CityFullName: "东莞市",
+			CityADCode: "441900",
+			DistrictFullName: "东莞市",
+			DistrictADCode: "441999",
+		},
+		"442000": lbs.Relationship{
+			Level:                 lbs.LevelDistrict,
+			IsWithoutDistrictCity: true,
+			ProvinceFullName:"广东省",
+			ProvinceADCode: "440000",
+			CityFullName: "中山市",
+			CityADCode: "442000",
+			DistrictFullName: "中山市",
+			DistrictADCode: "442099",
+		},
+		"460400": lbs.Relationship{
+			Level:                 lbs.LevelDistrict,
+			IsWithoutDistrictCity: true,
+			ProvinceFullName:"海南省",
+			ProvinceADCode: "460000",
+			CityFullName: "儋州市",
+			CityADCode: "460400",
+			DistrictFullName: "儋州市",
+			DistrictADCode: "460499",
+		},
+		"620200": lbs.Relationship{
+			Level:                 lbs.LevelDistrict,
+			IsWithoutDistrictCity: true,
+			ProvinceFullName:"甘肃省",
+			ProvinceADCode: "620000",
+			CityFullName: "嘉峪关市",
+			CityADCode: "620200",
+			DistrictFullName: "嘉峪关市",
+			DistrictADCode: "620299",
+		},
+	})
 }
