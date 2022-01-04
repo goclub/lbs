@@ -5,8 +5,91 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
-
-func TestDistrict_Relationship(t *testing.T) {
+func TestDistrict_RelationshipLevelProvince(t *testing.T) {
+	d, err  := lbs.NewDistrict(lbs.DistrictDersion20211103) ; assert.NoError(t, err)
+	{
+		info, has, err := d.Relationship("110000") ; assert.NoError(t, err)
+		assert.Equal(t,has, true)
+		assert.Equal(t, info, lbs.Relationship{
+			Level: lbs.LevelProvince,
+			ProvinceFullName:"北京市",
+			ProvinceADCode: "110000",
+			CityFullName: "",
+			CityADCode: "",
+			DistrictFullName: "",
+			DistrictADCode: "",
+		})
+	}
+	{
+		info, has, err := d.Relationship("340000") ; assert.NoError(t, err)
+		assert.Equal(t,has, true)
+		assert.Equal(t, info, lbs.Relationship{
+			Level: lbs.LevelProvince,
+			ProvinceFullName:"安徽省",
+			ProvinceADCode: "340000",
+			CityFullName: "",
+			CityADCode: "",
+			DistrictFullName: "",
+			DistrictADCode: "",
+		})
+	}
+	{
+		info, has, err := d.Relationship("310000") ; assert.NoError(t, err)
+		assert.Equal(t,has, true)
+		assert.Equal(t, info, lbs.Relationship{
+			Level: lbs.LevelProvince,
+			ProvinceFullName:"上海市",
+			ProvinceADCode: "310000",
+			CityFullName: "",
+			CityADCode: "",
+			DistrictFullName: "",
+			DistrictADCode: "",
+		})
+	}
+}
+func TestDistrict_RelationshipLevelCity(t *testing.T) {
+	d, err  := lbs.NewDistrict(lbs.DistrictDersion20211103) ; assert.NoError(t, err)
+	{
+		info, has, err := d.Relationship("440100") ; assert.NoError(t, err)
+		assert.Equal(t,has, true)
+		assert.Equal(t, info, lbs.Relationship{
+			Level: lbs.LevelCity,
+			ProvinceFullName:"广东省",
+			ProvinceADCode: "440000",
+			CityFullName: "广州市",
+			CityADCode: "440100",
+			DistrictFullName: "",
+			DistrictADCode: "",
+		})
+	}
+	{
+		info, has, err := d.Relationship("440200") ; assert.NoError(t, err)
+		assert.Equal(t,has, true)
+		assert.Equal(t, info, lbs.Relationship{
+			Level: lbs.LevelCity,
+			ProvinceFullName:"广东省",
+			ProvinceADCode: "440000",
+			CityFullName: "韶关市",
+			CityADCode: "440200",
+			DistrictFullName: "",
+			DistrictADCode: "",
+		})
+	}
+	{
+		info, has, err := d.Relationship("540100") ; assert.NoError(t, err)
+		assert.Equal(t,has, true)
+		assert.Equal(t, info, lbs.Relationship{
+			Level: lbs.LevelCity,
+			ProvinceFullName:"西藏自治区",
+			ProvinceADCode: "540000",
+			CityFullName: "拉萨市",
+			CityADCode: "540100",
+			DistrictFullName: "",
+			DistrictADCode: "",
+		})
+	}
+}
+func TestDistrict_RelationshipLevelDistrict(t *testing.T) {
 	d, err  := lbs.NewDistrict(lbs.DistrictDersion20211103) ; assert.NoError(t, err)
 	{
 		info, has, err := d.Relationship("310101") ; assert.NoError(t, err)
@@ -32,19 +115,6 @@ func TestDistrict_Relationship(t *testing.T) {
 			CityADCode: "340100",
 			DistrictFullName: "肥西县",
 			DistrictADCode: "340123",
-		})
-	}
-	{
-		// 340100 合肥市
-		info, has, err := d.Relationship("340100") ; assert.NoError(t, err)
-		assert.Equal(t,has, false)
-		assert.Equal(t, info, lbs.Relationship{
-			ProvinceFullName:"",
-			ProvinceADCode: "",
-			CityFullName: "",
-			CityADCode: "",
-			DistrictFullName: "",
-			DistrictADCode: "",
 		})
 	}
 	{
@@ -93,19 +163,21 @@ func TestDistrict_Relationship(t *testing.T) {
 func TestCheckDistricts(t *testing.T) {
 	d, err  := lbs.NewDistrict(lbs.DistrictDersion20211103) ; assert.NoError(t, err)
 	for _, item := range d.RelationshipList {
-		provincePart := item.DistrictADCode[0:2]
-		cityPart := item.DistrictADCode[2:4]
-		districtPart := item.DistrictADCode[4:6]
-		assert.Equal(t,item.ProvinceADCode, provincePart+"0000", item.DistrictADCode)
-		// 不是直辖市的区才需要判断 city ADCode
-		if item.ProvinceADCode != item.CityADCode {
-			assert.Equal(t,item.CityADCode, provincePart + cityPart + "00", item.DistrictADCode)
-			continue
+		if item.Level == lbs.LevelDistrict {
+			provincePart := item.DistrictADCode[0:2]
+			cityPart := item.DistrictADCode[2:4]
+			districtPart := item.DistrictADCode[4:6]
+			assert.Equal(t,item.ProvinceADCode, provincePart+"0000", item.DistrictADCode)
+			// 不是直辖市的区才需要判断 city ADCode
+			if item.ProvinceADCode != item.CityADCode {
+				assert.Equal(t,item.CityADCode, provincePart + cityPart + "00", item.DistrictADCode)
+				continue
+			}
+			if item.IsWithoutDistrictCity {
+				assert.Equal(t, item.DistrictADCode[4:6], "99")
+			}
+			assert.NotEqualf(t, t, districtPart, "0000")
 		}
-		if item.IsWithoutDistrictCity {
-			assert.Equal(t, item.DistrictADCode[4:6], "99")
-		}
-		assert.NotEqualf(t, t, districtPart, "0000")
 	}
 	assert.Equal(t, d.WithoutDistrictCity, map[string]lbs.Relationship{
 		"441900": lbs.Relationship{

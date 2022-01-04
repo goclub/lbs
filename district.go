@@ -25,10 +25,31 @@ func NewDistrict(data AreaData) (d District, err error) {
 		return
 	}
 	for _, province := range provinces {
+		// append LevelProvince
+		relationships = append(relationships, Relationship{
+			Level: LevelProvince,
+			ProvinceFullName: province.FullName,
+			ProvinceADCode:   province.ADCode,
+			CityFullName:     "",
+			CityADCode:       "",
+			DistrictFullName: "",
+			DistrictADCode:   "",
+		})
 		start := province.ChildrenIndex[0]
 		end := province.ChildrenIndex[1]+1
 		subcities := cities[start:end]
 		for _, city := range subcities {
+			// append LevelCity
+			relationships = append(relationships, Relationship{
+				Level: LevelCity,
+				ProvinceFullName: province.FullName,
+				ProvinceADCode:   province.ADCode,
+				CityFullName:     city.FullName,
+				CityADCode:       city.ADCode,
+				DistrictFullName: "",
+				DistrictADCode:   "",
+			})
+			// append LevelDistrict
 			if len(city.ChildrenIndex) == 0 {
 				// 直辖市的区在腾讯的lbs数据中只在 cities 存在
 				relationships = append(relationships, Relationship{
@@ -41,26 +62,26 @@ func NewDistrict(data AreaData) (d District, err error) {
 					DistrictFullName: city.FullName, // district 黄浦区
 					DistrictADCode:   city.ADCode,
 				})
-				continue
-			}
-			start := city.ChildrenIndex[0]
-			end := city.ChildrenIndex[1]+1
-			subDistricts := districts[start:end]
-			for _, district := range subDistricts {
-				isWithoutDistrictCity := len(subDistricts) == 1
-				item := Relationship{
-					Level: LevelDistrict,
-					IsWithoutDistrictCity: isWithoutDistrictCity,
-					ProvinceFullName: province.FullName,
-					ProvinceADCode:   province.ADCode,
-					CityFullName:     city.FullName,
-					CityADCode:       city.ADCode,
-					DistrictFullName: district.FullName,
-					DistrictADCode:   district.ADCode,
-				}
-				relationships = append(relationships, item)
-				if isWithoutDistrictCity {
-					d.WithoutDistrictCity[city.ADCode] = item
+			} else {
+				start := city.ChildrenIndex[0]
+				end := city.ChildrenIndex[1]+1
+				subDistricts := districts[start:end]
+				for _, district := range subDistricts {
+					isWithoutDistrictCity := len(subDistricts) == 1
+					item := Relationship{
+						Level: LevelDistrict,
+						IsWithoutDistrictCity: isWithoutDistrictCity,
+						ProvinceFullName: province.FullName,
+						ProvinceADCode:   province.ADCode,
+						CityFullName:     city.FullName,
+						CityADCode:       city.ADCode,
+						DistrictFullName: district.FullName,
+						DistrictADCode:   district.ADCode,
+					}
+					relationships = append(relationships, item)
+					if isWithoutDistrictCity {
+						d.WithoutDistrictCity[city.ADCode] = item
+					}
 				}
 			}
 		}
@@ -83,6 +104,7 @@ type Relationship struct {
 	DistrictADCode string
 }
 func (d District) Relationship(adcode string) (data Relationship, has bool, err error) {
+	// 优先查区县
 	for _, item := range d.RelationshipList {
 		// 边界情况: (4个不设区的地级市) 行政区划如下: 广东省 440000 东莞市 441900 东莞市 441999, (注意我没有打错,就是东莞市下面有个东莞市但是adcode不一样) 有时候腾讯lbs返回的DistrictADCode 是441900
 		if item.IsWithoutDistrictCity {
@@ -96,7 +118,23 @@ func (d District) Relationship(adcode string) (data Relationship, has bool, err 
 				}
 			}
 		}
-		if item.DistrictADCode == adcode {
+		if item.DistrictADCode == adcode && item.Level == LevelDistrict {
+			has = true
+			data = item
+			return
+		}
+	}
+	// 其次查市
+	for _, item := range d.RelationshipList {
+		if item.CityADCode == adcode && item.Level == LevelCity {
+			has = true
+			data = item
+			return
+		}
+	}
+	// 最后查省
+	for _, item := range d.RelationshipList {
+		if item.ProvinceADCode == adcode && item.Level == LevelProvince {
 			has = true
 			data = item
 			return
